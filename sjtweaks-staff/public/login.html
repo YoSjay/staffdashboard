@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Login | SJTweaks</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --border: #252525;
+            --text: #fafafa;
+            --text-2: #888;
+            --accent: #10b981;
+            --accent-2: #059669;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(16, 185, 129, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(16, 185, 129, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .login-card {
+            position: relative;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 48px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 24px;
+            filter: brightness(1.2);
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-2);
+            font-size: 0.9rem;
+            margin-bottom: 32px;
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-2);
+            margin-bottom: 8px;
+        }
+
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 14px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .input-group select {
+            cursor: pointer;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--accent);
+            border: none;
+            border-radius: 10px;
+            color: #fff;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .btn:hover { background: var(--accent-2); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .error {
+            color: #f43f5e;
+            font-size: 0.85rem;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .error.show { display: block; }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin: 24px 0;
+            color: var(--text-2);
+            font-size: 0.8rem;
+        }
+
+        .divider::before, .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        .admin-link {
+            color: var(--text-2);
+            font-size: 0.85rem;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .admin-link:hover { color: var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <img src="https://i.imgur.com/MBCguvv.png" alt="SJTweaks" class="logo">
+        <h1>Staff Portal</h1>
+        <p class="subtitle">Login to view your earnings</p>
+
+        <form id="loginForm">
+            <div class="input-group">
+                <label>Staff Member</label>
+                <select id="staffSelect" required>
+                    <option value="">Select your name...</option>
+                    <option value="sjay">SJay</option>
+                    <option value="nouzen">Nouzen</option>
+                    <option value="daedae">DaeDae</option>
+                    <option value="kyzo">Kyzo</option>
+                </select>
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+
+            <button type="submit" class="btn">Login</button>
+            <p class="error" id="error">Invalid credentials</p>
+        </form>
+
+        <div class="divider">or</div>
+
+        <a href="/admin" class="admin-link">Admin Access →</a>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const staffId = document.getElementById('staffSelect').value;
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('error');
+            const btn = e.target.querySelector('button');
+            
+            btn.disabled = true;
+            btn.textContent = 'Logging in...';
+            errorEl.classList.remove('show');
+            
+            try {
+                const res = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ staffId, password })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    // Store session
+                    sessionStorage.setItem('staffId', data.staffId);
+                    sessionStorage.setItem('staffName', data.name);
+                    sessionStorage.setItem('isAdmin', data.isAdmin);
+                    sessionStorage.setItem('token', data.token);
+                    
+                    // Redirect based on admin status
+                    if (data.isAdmin) {
+                        window.location.href = '/admin';
+                    } else {
+                        window.location.href = '/dashboard';
+                    }
+                } else {
+                    errorEl.textContent = data.error || 'Invalid credentials';
+                    errorEl.classList.add('show');
+                }
+            } catch (err) {
+                errorEl.textContent = 'Connection error';
+                errorEl.classList.add('show');
+            }
+            
+            btn.disabled = false;
+            btn.textContent = 'Login';
+        });
+    </script>
+</body>
+</html>

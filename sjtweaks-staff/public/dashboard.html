@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | SJTweaks Staff</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --bg: #0d0d0d;
+            --surface: #161616;
+            --surface-2: #1f1f1f;
+            --border: #2a2a2a;
+            --text: #fafafa;
+            --text-2: #a0a0a0;
+            --accent: #10b981;
+            --accent-2: #059669;
+            --red: #f43f5e;
+            --orange: #f97316;
+            --blue: #3b82f6;
+            --purple: #8b5cf6;
+            --cyan: #06b6d4;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .app {
+            position: relative;
+            z-index: 1;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 24px;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 40px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo {
+            width: 44px;
+            height: 44px;
+            filter: brightness(1.2);
+        }
+
+        header h1 {
+            font-size: 1.4rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        header h1 span {
+            color: var(--text-2);
+            font-weight: 400;
+        }
+
+        .logout-btn {
+            padding: 10px 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-2);
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            border-color: var(--red);
+            color: var(--red);
+        }
+
+        /* Stats cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .stat-card .label {
+            font-size: 0.85rem;
+            color: var(--text-2);
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .stat-card .value.small {
+            font-size: 1.5rem;
+            color: var(--text);
+        }
+
+        /* Charts */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .chart-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .chart-card h3 {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-2);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 20px;
+        }
+
+        .chart-wrap {
+            display: flex;
+            justify-content: center;
+        }
+
+        .chart-wrap canvas {
+            max-width: 200px !important;
+            max-height: 200px !important;
+        }
+
+        /* Vouches table */
+        .vouches-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .vouches-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+
+        .vouches-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .vouch-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .vouch-item:last-child { border-bottom: none; }
+
+        .vouch-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .vouch-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--surface-2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .vouch-icon.rejected {
+            background: rgba(244, 63, 94, 0.1);
+        }
+
+        .vouch-details .product {
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .vouch-details .source {
+            font-size: 0.8rem;
+            color: var(--text-2);
+        }
+
+        .vouch-amount {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            color: var(--accent);
+        }
+
+        .vouch-amount.rejected {
+            color: var(--red);
+            text-decoration: line-through;
+        }
+
+        /* System Alerts */
+        .alerts-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 320px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .alert-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--orange);
+            border-radius: 8px;
+            padding: 14px 16px;
+            margin-bottom: 8px;
+            animation: slideIn 0.3s ease;
+        }
+
+        .alert-box.error { border-left-color: var(--red); }
+        .alert-box.info { border-left-color: var(--blue); }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .alert-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+
+        .alert-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--orange);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .alert-box.error .alert-title { color: var(--red); }
+        .alert-box.info .alert-title { color: var(--blue); }
+
+        .alert-time {
+            font-size: 0.7rem;
+            color: var(--text-2);
+        }
+
+        .alert-message {
+            font-size: 0.85rem;
+            color: var(--text);
+            line-height: 1.4;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-2);
+        }
+
+        @media (max-width: 768px) {
+            .stats-grid { grid-template-columns: 1fr; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .alerts-container { width: calc(100% - 48px); left: 24px; right: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <header>
+            <div class="header-left">
+                <img src="https://i.imgur.com/MBCguvv.png" alt="SJTweaks" class="logo">
+                <h1 id="headerTitle">Dashboard <span>/ loading...</span></h1>
+            </div>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">Total Earnings</div>
+                <div class="value" id="totalEarnings">$0.00</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Total Vouches</div>
+                <div class="value small" id="totalVouches">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Avg Per Vouch</div>
+                <div class="value small" id="avgVouch">$0.00</div>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Earnings by Product</h3>
+                <div class="chart-wrap">
+                    <canvas id="productsChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card">
+                <h3>Vouch Sources</h3>
+                <div class="chart-wrap">
+                    <canvas id="sourcesChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="vouches-card">
+            <h3>Recent Vouches</h3>
+            <div class="vouches-list" id="vouchesList">
+                <div class="no-data">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alerts-container" id="alertsContainer"></div>
+
+    <script>
+        const API = '';
+        let staffId = sessionStorage.getItem('staffId');
+        let staffName = sessionStorage.getItem('staffName');
+        let productsChart = null;
+        let sourcesChart = null;
+
+        // Check login
+        if (!staffId) {
+            window.location.href = '/';
+        }
+
+        document.getElementById('headerTitle').innerHTML = `Dashboard <span>/ ${staffName}</span>`;
+
+        const productColors = {
+            'Controller Macro': '#8b5cf6',
+            'Zero Delay': '#3b82f6',
+            'Zero Delay Plus': '#06b6d4',
+            'FPS Boost': '#10b981',
+            'Ping Optimizer': '#f97316',
+            'Premium Utility': '#eab308',
+            'Aim Bundle': '#ec4899',
+            'Shotgun Pack': '#f43f5e',
+            'Keyboard Macro': '#6366f1',
+            'Unknown': '#6b7280'
+        };
+
+        const productNameMap = {
+            'controller-macro': 'Controller Macro',
+            'zero-delay': 'Zero Delay',
+            'zero-delay-plus': 'Zero Delay Plus',
+            'fps-boost': 'FPS Boost',
+            'ping-optimizer': 'Ping Optimizer',
+            'premium-utility': 'Premium Utility',
+            'aim-bundle': 'Aim Bundle',
+            'shotgun-pack': 'Shotgun Pack',
+            'keyboard-macro': 'Keyboard Macro',
+            'unknown': 'Unknown'
+        };
+
+        async function loadData() {
+            try {
+                const res = await fetch(`${API}/api/staff/${staffId}/data`);
+                const data = await res.json();
+
+                if (!data.success) {
+                    console.error('Failed to load data');
+                    return;
+                }
+
+                // Update stats
+                document.getElementById('totalEarnings').textContent = `$${data.staff.totalEarnings.toFixed(2)}`;
+                document.getElementById('totalVouches').textContent = data.staff.vouchCount;
+                const avg = data.staff.vouchCount > 0 ? data.staff.totalEarnings / data.staff.vouchCount : 0;
+                document.getElementById('avgVouch').textContent = `$${avg.toFixed(2)}`;
+
+                // Render vouches
+                renderVouches(data.vouches);
+
+                // Render charts
+                renderCharts(data.vouches);
+
+                // Render alerts
+                renderAlerts(data.alerts);
+
+            } catch (e) {
+                console.error('Error loading data:', e);
+            }
+        }
+
+        function renderVouches(vouches) {
+            const container = document.getElementById('vouchesList');
+            
+            if (vouches.length === 0) {
+                container.innerHTML = '<div class="no-data">No vouches yet</div>';
+                return;
+            }
+
+            // Sort by newest first
+            vouches.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            container.innerHTML = vouches.map(v => {
+                const productName = productNameMap[v.product] || v.product;
+                const isRejected = v.rejected;
+                const icon = isRejected ? '❌' : (v.isController ? '🎮' : '✅');
+                const source = v.source === 'discord' ? `Discord • ${v.discordUsername || 'Unknown'}` : 'Website';
+                
+                return `
+                    <div class="vouch-item">
+                        <div class="vouch-info">
+                            <div class="vouch-icon ${isRejected ? 'rejected' : ''}">${icon}</div>
+                            <div class="vouch-details">
+                                <div class="product">${productName}</div>
+                                <div class="source">${source}</div>
+                            </div>
+                        </div>
+                        <div class="vouch-amount ${isRejected ? 'rejected' : ''}">
+                            ${isRejected ? '$0.00' : `+$${v.earningsPerPerson.toFixed(2)}`}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderCharts(vouches) {
+            // Products chart
+            const productCounts = {};
+            const sourceCounts = { discord: 0, website: 0 };
+
+            vouches.filter(v => !v.rejected).forEach(v => {
+                const pName = productNameMap[v.product] || 'Unknown';
+                productCounts[pName] = (productCounts[pName] || 0) + v.earningsPerPerson;
+                sourceCounts[v.source || 'website']++;
+            });
+
+            if (productsChart) productsChart.destroy();
+            productsChart = new Chart(document.getElementById('productsChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(productCounts),
+                    datasets: [{
+                        data: Object.values(productCounts),
+                        backgroundColor: Object.keys(productCounts).map(p => productColors[p] || '#6b7280'),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '60%',
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            if (sourcesChart) sourcesChart.destroy();
+            sourcesChart = new Chart(document.getElementById('sourcesChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Discord', 'Website'],
+                    datasets: [{
+                        data: [sourceCounts.discord, sourceCounts.website],
+                        backgroundColor: ['#5865F2', '#10b981'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '60%',
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        function renderAlerts(alerts) {
+            const container = document.getElementById('alertsContainer');
+            
+            // Filter unread alerts
+            const unread = alerts.filter(a => !a.read);
+            
+            if (unread.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = unread.map(a => {
+                const time = new Date(a.timestamp).toLocaleTimeString();
+                return `
+                    <div class="alert-box ${a.type}">
+                        <div class="alert-header">
+                            <span class="alert-title">${a.type === 'error' ? 'Error' : a.type === 'info' ? 'Info' : 'Alert'}</span>
+                            <span class="alert-time">${time}</span>
+                        </div>
+                        <div class="alert-message">${a.message}</div>
+                    </div>
+                `;
+            }).join('');
+
+            // Mark as read after 10 seconds
+            setTimeout(async () => {
+                await fetch(`${API}/api/staff/${staffId}/alerts/read`, { method: 'POST' });
+            }, 10000);
+        }
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = '/';
+        }
+
+        loadData();
+        setInterval(loadData, 30000); // Refresh every 30s
+    </script>
+</body>
+</html>
