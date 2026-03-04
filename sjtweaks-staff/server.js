@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 
 // OpenAI for image analysis
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || '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'
+  apiKey: process.env.OPENAI_API_KEY
 });
 
 // Staff members with login credentials
@@ -235,11 +235,14 @@ app.post('/api/vouch/discord', (req, res) => {
     
     saveDatabase();
     
-    console.log(`${rejected ? '⚠️ Rejected' : '✅'} Discord vouch: $${amount.toFixed(2)} to ${STAFF_MEMBERS[normalizedStaffId].name} from ${discordUsername}${rejected ? ` (${rejectionReason})` : ''}`);
+    const newTotal = db.staffEarnings[normalizedStaffId]?.totalEarnings || 0;
+    
+    console.log(`${rejected ? '⚠️ Rejected' : '✅'} Discord vouch: $${amount.toFixed(2)} to ${STAFF_MEMBERS[normalizedStaffId].name} from ${discordUsername}${rejected ? ` (${rejectionReason})` : ''} | New Total: $${newTotal.toFixed(2)}`);
     
     res.json({ 
       success: true, 
       vouch,
+      newTotal: newTotal,
       message: rejected 
         ? `Vouch logged but not counted: ${rejectionReason}`
         : `$${amount.toFixed(2)} added to ${STAFF_MEMBERS[normalizedStaffId].name}`
@@ -248,6 +251,25 @@ app.post('/api/vouch/discord', (req, res) => {
     console.error('Discord vouch error:', error);
     res.status(500).json({ success: false, error: 'Server error' });
   }
+});
+
+// Get staff earnings
+app.get('/api/staff/:staffId/earnings', (req, res) => {
+  const staffId = req.params.staffId.toLowerCase();
+  
+  if (!STAFF_MEMBERS[staffId]) {
+    return res.status(404).json({ success: false, error: 'Staff not found' });
+  }
+  
+  const earnings = db.staffEarnings[staffId] || { totalEarnings: 0, vouchCount: 0 };
+  
+  res.json({
+    success: true,
+    staffId,
+    name: STAFF_MEMBERS[staffId].name,
+    total: earnings.totalEarnings,
+    vouchCount: earnings.vouchCount
+  });
 });
 
 // Analyze vouch image with AI
